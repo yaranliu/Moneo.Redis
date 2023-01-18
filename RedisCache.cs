@@ -32,7 +32,7 @@ public class RedisCache : IRedisCache
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public int Expiration { get; set; }    
+    public int Expiration { get; }    
     protected RedisCache(IServiceProvider provider) 
     {
         var connectionMultiplexer = provider.GetService<IConnectionMultiplexer>();
