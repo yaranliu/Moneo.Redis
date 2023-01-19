@@ -1,29 +1,26 @@
-# Virtual Cache Wrapper based on Redis
-## Motivation
-While developing micro service architecture projects, more than one service may necessitate to access the same cache, for example ```UserProfile``` from ```UserService``` and ```OrderService```.
+# Wrapper for StackExchange.Redis 
+```.net``` package that is designed to create cache service classes which access ```Redis``` cache server using ```StackExchange.Redis``` library, allowing multiple configurations, e.g. varying expiration time, over the same connection.
 
-Moreover, there may be a need for multiple abstractions on the same Redis cache with different configurations, e.g. ```UserCache``` and ```JwtCache```.
-### Dependencies
-```
-StackExchange.Redis
-NewtonSoft.Json
-Microsoft.Extensions.DependencyInjection
-```
+**Dependencies:**
+
+[```StackExchange.Redis```](https://github.com/StackExchange/StackExchange.Redis), [```NewtonSoft.Json```](https://www.newtonsoft.com/json), [```Microsoft.Extensions.DependencyInjection```](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection?view=dotnet-plat-ext-7.0)
 # Usage
+[Step 1.](#step-1) Add ```StackExchange.Redis.IConnectionMultiplexer``` as a singleton to service container with ```AddRedisCache``` or in a standard manner.
 
-1. Add ```StackExchange.Redis.IConnectionMultiplexer``` as a singleton to service container with ```AddRedisCache``` or in a standard manner.
-2. Define object classes to be cached
-3.  Create an interface for the custom cache service
-4. Define a custom cache class based on the created cache interface and ```RedisCache```
-5. Add custom cache service to service provider
-6. Inject ```IUserCache``` to the targert service(s) via *Dependency Injection*
-7.  If needed, e.g. in ```Controller (HTTP Request Handlers)```, add target service to the service container during app startup and resolve the final service via *Dependency Injection*
+[Step 2.](#step-2) Define object classes to be cached
 
+[Step 3.](#step-3) Create an interface for the custom cache service
+
+[Step 4.](#step-4) Define a custom cache class based on the created cache interface and ```RedisCache```
+
+[Step 5.](#step-5) Add custom cache service to service provider
+
+[Step 6.](#step-6) Inject ```IUserCache``` to the target service(s) via *Dependency Injection*
+
+[Step 7.](#step-7) Optionally, add target service to the service container during app startup and resolve the final service via *Dependency Injection*, e.g. in ```Controller (HTTP Request Handlers)```
 ## Example Use
-
-1. Add ```StackExchange.Redis.IConnectionMultiplexer``` as a singleton to service container with ```AddRedisCache``` or in a standard manner.
-
-
+### Step 1
+Add ```StackExchange.Redis.IConnectionMultiplexer``` as a singleton to service container with ```AddRedisCache``` or in a standard manner.
 ```c#  
 collection.AddRedisCache("localhost:6379")  
   
@@ -31,9 +28,8 @@ collection.AddRedisCache("localhost:6379")
   
 collection.AddSingleton<IConnectionMultiplexer>(x => ConnectionMultiplexer.Connect("localhost:6379"));  
 ```  
-
-2. Define object classes to be cached
-
+### Step 2
+Define object classes to be cached
 ```c#
 [CanBeCached("public-profile")]  
 public class PublicUserProfile  
@@ -47,9 +43,8 @@ public class PublicUserProfile
 	// ...
 }
 ```
-
-3. Create an interface for the custom cache service
-
+### Step 3
+Create an interface for the custom cache service
 ```c#  
 public interface IUserCache : IRedisCache  
 {  
@@ -60,9 +55,8 @@ public interface IUserCache : IRedisCache
     Task<bool> RemovePublicProfileAsync(string id);  
 }  
 ```  
-
-4. Define a custom cache class based on the created cache interface and ```RedisCache```
-
+### Step 4
+Define a custom cache class based on the created cache interface and ```RedisCache```
 ```c#  
 public class UserCache : RedisCache, IUserCache  
 {  
@@ -92,15 +86,15 @@ public class UserCache : RedisCache, IUserCache
     }  
 }  
 ```  
-
-5. Add custom cache service to service provider
+### Step 5
+Add custom cache service to service provider
 
 ```c#
 collection.AddSingleton<IUserCache, UserCache>(  
     provider => new UserCache(provider, options));
 ```
-
-6. Inject ```IUserCache``` to the targert service(s) via *Dependency Injection*
+### Step 6
+Inject ```IUserCache``` to the target service(s) via *Dependency Injection*
 
 ```c# 
 public class UserService {
@@ -117,8 +111,8 @@ public class UserService {
 	// ...
 }
 ```
-
-7. If needed, e.g. in ```Controller (HTTP Request Handlers)```, add target service to the service container during app startup and resolve the final service via *Dependency Injection*
+### Step 7
+If needed, e.g. in ```Controller (HTTP Request Handlers)```, add target service to the service container during app startup and resolve the final service via *Dependency Injection*
 ```c#
 collection.AddSingleton<UserService>();
 // OR
@@ -126,9 +120,9 @@ collection.AddScoped<UserService>();
 // OR
 collection.AddTransient<UserService>();
 ```
-
-# Attributes
-## CanBeCached
+# Code
+## Attributes
+### CanBeCached
 Although not mandatory, ```CanBeCached``` attribute is used to define collection name for the class or struct that will be stored in Redis.
 
 if ```CanBeCached``` attribute is missing or has no parameter, ```domain``` will be the class name, otherwise, the parameter will be used as the ```domain```
@@ -150,9 +144,7 @@ public class UserProfile {
 	// ...
 }
 ```
-
-
-## CacheKey
+### CacheKey
 Decorate the identifier property (```string```)  of the cachable item with ```CacheKey``` attribute. If this attribute is missing or the property with this tag returns a ```null``` or empty string on run-time, ```CacheKeyIsNullOrEmptyException``` will be thrown.
 ```c#
 [CanBeCached("user-profile")]
@@ -163,12 +155,10 @@ public class UserProfile {
 	public string AvatarUrl { get; set;}
 }
 ```
-
-# Classes
-## RedisCache
+## Classes
+### RedisCache
 Base class for the custom cache to be created
-
-### Properties (Get only)
+#### Properties (Get only)
 
 **```IDatabase Database```**
 Redis database. The custom cache will be implementing methods using this variable.
@@ -223,8 +213,7 @@ Run-time generated **domain** for the custom cache.
 
 **```int Expiration```**
 Default expiration in milliseconds
-
-### Methods
+#### Methods
 ```string ItemKey<T>(string id)```
 Generates key for cache item of type T. Returns ```domain:collection:id``` where
 
@@ -254,7 +243,6 @@ public class UserCache : RedisCache, IUserCache
     // ...  
 }  
 ```  
-
 ## Extensions
 ### AddRedisCacheService
 Extension to ```IServiceCollection``` for adding Redis service
