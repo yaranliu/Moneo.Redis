@@ -24,4 +24,8 @@
       </None>
     </ItemGroup>
 
+    <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+      <Exec Command="rm ./bin/Release/*.nupkg" />
+    </Target>
+
 </Project>
